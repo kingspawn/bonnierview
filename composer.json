@@ -1,6 +1,7 @@
 {
 	"require" : {
 		"downshiftorg/wp-http" : "^2.0",
-		"twig/twig" : "^2.0"
+		"twig/twig" : "^2.0",
+		"doctrine/cache": "^1.8"
 	}
 }

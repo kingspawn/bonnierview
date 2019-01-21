@@ -1,9 +1,12 @@
 <?php
-    define('PAGE', 1);
-    define('PER_PAGE', 10);
+    use Doctrine\Common\Cache\ArrayCache;
+
+    define('PAGE', 1); // Page to list
+    define('PER_PAGE', 10); // Items listed
+    define('TTL_CACHE_ENTRY', 60); // Seconds
     
     $hosts = [
-//         'finnsinte.com',
+        'finnsinte.com',
         'teknikensvarld.se',
         'alltommat.se',
         'skonahem.com',
@@ -43,34 +46,46 @@
             return "$scheme://$host/$path".($query!='' ? "?$query" : '');
         }
     }
+
+    $cache = new ArrayCache();
     
     $postsByHost = [];
     foreach($hosts as $host) {
         $errors = [];
         
-        $url = http_build_url([
-            'scheme' => 'http',
-            'host' => $host,
-            
-            'path' => '/wp-json/wp/v2/posts',
-            'query' => http_build_query([
-                'page' => PAGE,
-                'per_page' => PER_PAGE
-            ])
-        ]);
-        
-        $json = file_get_contents($url);
-        $posts = json_decode($json);
-        if ($posts === null) {
-            $errors []= 'No data received from site.';
+        $cache_key = $host;
+        if ($cache->contains($cache_key)) {
+            $postsByHost[$host] = $cache->get($cache_key);
         }
-        
-
-        $postsByHost[$host] = [
-            'hostName' => $host,
-            'posts' => $posts,
-            'errors' => $errors,
-        ];        
+        else {
+            $url = http_build_url([
+                'scheme' => 'http',
+                'host' => $host,
+                
+                'path' => '/wp-json/wp/v2/posts',
+                'query' => http_build_query([
+                    'page' => PAGE,
+                    'per_page' => PER_PAGE
+                ])
+            ]);
+            
+            $json = file_get_contents($url);
+            $posts = json_decode($json);
+            if ($posts === null) {
+                $errors []= 'No data received from site.';
+            }
+            
+            $postsByHost[$host] = [
+                'hostName' => $host,
+                'posts' => $posts,
+                'errors' => $errors,
+            ];
+            
+            $cache->save(
+                $cache_key,
+                $postsByHost[$host]
+            );
+        }
     }
     
     $loader = new Twig_Loader_Filesystem(getcwd().'/../template');
