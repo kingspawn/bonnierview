@@ -10,6 +10,10 @@
         'mama.nu',
     ];
 
+    set_include_path(__DIR__.'/../include:'.__DIR__.'/../vendor:'.get_include_path());
+    
+    include 'autoload.php';
+    
     if (!function_exists('http_build_url')) {
         function http_build_url(array $url) : string {
             $scheme = rtrim($url['scheme'] ?? 'http', ':/');
@@ -40,7 +44,10 @@
         }
     }
     
+    $postsByHost = [];
     foreach($hosts as $host) {
+        $errors = [];
+        
         $url = http_build_url([
             'scheme' => 'http',
             'host' => $host,
@@ -53,17 +60,27 @@
         ]);
         
         $json = file_get_contents($url);
-        
-        var_dump($json); exit();
-        
         $posts = json_decode($json);
-
-        echo '<h1>'.$host.'</h1>';
-        echo '<ul>';
-        foreach(array_values($posts) as $i => $post) {
-            echo '<a href="'.$post->link.'">'.
-                '<img src="'.$post->featured_image->src.'" alt="Artikel #'.($i+1).' för '.$host.'" />'.
-                '</a>';
+        if ($posts === null) {
+            $errors []= 'No data received from site.';
         }
-        echo '</ul>';
+        
+
+        $postsByHost[$host] = [
+            'hostName' => $host,
+            'posts' => $posts,
+            'errors' => $errors,
+        ];        
     }
+    
+    $loader = new Twig_Loader_Filesystem(getcwd().'/../template');
+    $twig = new Twig_Environment($loader, [
+//         'cache' => sys_get_temp_dir(),
+    ]);
+    
+    echo $twig->render(
+        'index.html',
+        [
+            'postsByHost' => $postsByHost
+        ]
+    );

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Bonnierview</title>
+        
+        <style type="text/css">
+			img {
+			  max-width: 50px;
+			  max-height: 50px;
+			  float: left;
+			}
+			li {
+			  display: flex;
+			  list-style-type: none;
+			  margin-bottom: .2em;
+			}
+			h1 {
+			  margin-bottom: 0px;
+			  text-transform: uppercase;
+			  font-weight: normal;
+			  text-decoration: underline;
+			}
+			ol {
+			  margin-top: 0px;
+			}
+			a {
+			  text-decoration: none;
+			  font-family: Verdana;
+			  margin-left: 0.5em;
+			  align-self: self-end;
+			}
+			a:hover {
+			  text-decoration: underline;
+			}
+			ul {
+			  margin-top: 0px;
+			}
+        </style>
+    </head>
+    <body>
+        {% for host in postsByHost %}
+	        <h1>{{ host.hostName }}</h1>
+	        {% if host.errors %}
+	        	{% for errorMsg in host.errors %}
+	        		{{ errorMsg }}<br>
+	        	{% endfor %}
+	        {% elseif not host.posts %}
+	        	<p>No posts received for host</p>
+	        {% else %}
+		        <ul>
+		        	{% for post in host.posts %}
+		            <li>
+	                	<img src="{{ post.featured_image.src }}" alt="Artikel #{{ loop.index }} för {{ host.hostName }}" />
+		            	<a href="{{ post.link }}">
+		                	{{ post.title.rendered }}
+		                </a>
+		            </li>
+		            {% endfor %}
+				</ul>
+			{%endif %}
+        {% endfor %}
+    </body>
+</html>
